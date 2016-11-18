@@ -9,8 +9,8 @@ case class ItemSet(items: List[Int])
 
 object FrequentItemSet {
 
-  def frequentItemSets(basket: List[Int], frequentItemSets: ItemSet): List[Int] = {
-    List(1, 2)
+  def frequentItemSets(basket: ItemSet, frequentItemSets: ItemSet): ItemSet = {
+    ItemSet(List(1, 2))
   }
 
   def findFrequentItemSet(baskets: RDD[ItemSet], setSize: Int, frequentItemSet: Option[RDD[ItemSet]]): RDD[ItemSet] ={
