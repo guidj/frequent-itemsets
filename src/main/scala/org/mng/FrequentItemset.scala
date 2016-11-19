@@ -5,14 +5,24 @@ case class ItemSet(items: Set[Int], size: Int, support: Int)
 
 object FrequentItemSet {
 
+  def usage(): Unit ={
+    val message =
+      """
+        |FrequentItemSet [filePath] [supportThreshold] [maxSetSize]
+      """.stripMargin
+    println(message)
+  }
+
   def main(args: Array[String]): Unit = {
 
-    //TODO: stream baskets from file (on each iteration, save memory)
+    if (args.length < 3){
+      usage()
+      System.exit(1)
+    }
 
-//    val filePath = "src/main/resources/T10I4D100K.dat"
-//    val supportThreshold = 3
     val filePath = args(0)
     val supportThreshold = args(1).toInt
+    val maxSetSize = args(2).toInt
 
     val textFile = scala.io.Source.fromFile(filePath).getLines()
 
@@ -23,16 +33,10 @@ object FrequentItemSet {
 
     val items = baskets.flatMap{ case (_, items) => items.map(e => (e, 1))}
 
-    val itemsFrequency = collection.mutable.Map[Int, Int]()
+    val frequentItemSet = items.groupBy{ case (id, c) => id }
+      .map{ case (key, values) => (key, values.map(v => v._2).sum) }
+      .filter{ case(key, count) => count >= supportThreshold }
 
-    items.foreach {
-      item => {
-        itemsFrequency(item._1) = item._2 + itemsFrequency.getOrElse(item._1, 0)
-      }
-    }
-
-    val frequentItemSet = itemsFrequency.filter{ case (a, b) => b >= supportThreshold }
-
-    Apriori.transform(baskets.toMap, frequentItemSet.toMap, supportThreshold)
+    Apriori.transform(baskets.toMap, frequentItemSet, supportThreshold, maxSetSize)
   }
 }

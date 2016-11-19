@@ -2,7 +2,7 @@ package org.mng
 
 object Apriori {
 
-  def transform(baskets: Map[Int, Set[Int]], items: Map[Int, Int], supportThreshold: Int, limit: Int = 10): Unit = {
+  def transform(baskets: Map[Int, Set[Int]], items: Map[Int, Int], supportThreshold: Int, maxSetSize: Int = 3): Unit = {
 
     val reverseBasketTable = collection.mutable.Map[Int, collection.mutable.Set[Int]]()
 
@@ -20,16 +20,16 @@ object Apriori {
       }
     }
 
-    val frequencyMap = collection.mutable.Map[Int, Map[Set[Int], Int]]()
+    val frequencyMap = collection.mutable.Map[Int, collection.mutable.Map[Set[Int], Int]]()
 
     val itemSet = items.filter(x => x._2 > supportThreshold).map(x => (Set(x._1), x._2))
 
     println("First filter leaves %d items that meet support threshold %d".format(itemSet.size, supportThreshold))
-    var nSizedItemSet = itemSet
+    var nSizedItemSet = collection.mutable.Map() ++ itemSet
 
-    frequencyMap(1) = itemSet
+    frequencyMap(1) = collection.mutable.Map() ++ itemSet
 
-    for (i <- 1 to 2){
+    for (i <- 1 until maxSetSize){
       val candidateItemSets = buildItemSets(baskets, nSizedItemSet.keys, items)
       val nPlusOneSizedItemSet = countItemSets(candidateItemSets, reverseBasketTable, supportThreshold)
       frequencyMap(i) = nPlusOneSizedItemSet
@@ -49,30 +49,6 @@ object Apriori {
       if x forall (y contains)
 
     } yield (y -- x).filter(i => frequentItems.contains(i)).map(i => { x.union(Set(i))})
-
-//    itemSet.flatMap(items => {
-//      baskets.flatMap((_, basketItems) => {
-//        basketItems.map(i => {
-//          (items, i) if (items.contains(i) == false)
-//        }) if (basketItems forall(items contains))
-//
-//      })
-//    })
-//    val combinations = for(x <- itemSet; y <- baskets){
-//      if (x forall (y._2 contains)){
-//
-//      }
-//    }
-
-
-
-//    val combinations = for {x <- singleItemSet
-//                            y <- itemSet
-//                            if x != y
-//                            if x.intersect(y).isEmpty}
-//      yield x.union(y)
-//
-//    combinations.toList.distinct
     combinations.flatten.toList.distinct
   }
 
@@ -81,12 +57,17 @@ object Apriori {
     baskets.toSet
   }
 
-  def countItemSets(itemSets: List[Set[Int]], reverseBasketTable: collection.mutable.Map[Int, collection.mutable.Set[Int]], supportThreshold: Int): Map[Set[Int], Int] = {
-    itemSets.map(items => {
+  def countItemSets(itemSets: List[Set[Int]], reverseBasketTable: collection.mutable.Map[Int, collection.mutable.Set[Int]], supportThreshold: Int): collection.mutable.Map[Set[Int], Int] = {
+
+    val itemCount = collection.mutable.Map[Set[Int], Int]()
+
+    itemSets.foreach(items => {
         val basketsWithItemSet = findItemSetBaskets(items, reverseBasketTable)
         val count = basketsWithItemSet.size
-      (items, count)
-      }).filter { case (_, c) => c >= supportThreshold }
-      .toMap
+      if (count >= supportThreshold)
+        itemCount(items) = count
+      })
+
+    itemCount
   }
 }
