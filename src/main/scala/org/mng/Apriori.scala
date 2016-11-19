@@ -14,7 +14,11 @@ object Apriori {
 
     val xyz = buildItemSets(itemSet, currentItemSet, threshold)
     println(xyz.count)
-    xyz.take(10).foreach(println)
+//    xyz.take(10).foreach(println)
+
+    val tty = countItemSets(xyz, baskets, threshold)
+
+    tty.take(10).foreach(println)
 //    for(i <- 1 to limit){
 //      currentItemSet = buildItemSets(itemSet, currentItemSet, threshold)
 //      println(currentItemSet.count)
@@ -32,11 +36,12 @@ object Apriori {
     combinations
   }
 
-  def countItemSets(itemSet: RDD[Set[Int]], baskets: RDD[Set[Int]], threshold: Int): Unit ={
-
-    itemSet.map{ items => {
-
-      baskets.map(basketItems => basketItems.intersect(items).empty)
+  def countItemSets(itemSet: RDD[Set[Int]], baskets: RDD[Set[Int]], threshold: Int): RDD[(Set[Int], Int)] ={
+    itemSet
+      .map{ items => {
+      val count = baskets.map(basketItems => if (basketItems.intersect(items).nonEmpty) 1 else 0).reduce(_+_)
+        (items, count)
     }}
+      .filter{ case (_, count) => count >= threshold }
   }
 }
