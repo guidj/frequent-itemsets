@@ -1,8 +1,5 @@
 package org.mng
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.storage.StorageLevel
-
 
 case class ItemSet(items: Set[Int], size: Int, support: Int)
 
@@ -10,10 +7,12 @@ object FrequentItemSet {
 
   def main(args: Array[String]): Unit = {
 
-    val filePath = "src/main/resources/T10I4D100K.dat" //"src/main/resources/in-1000.txt"
-    val supportThreshold = 3
-    //    val filePath = args(0)
-    //    val threshold = args(1)
+    //TODO: stream baskets from file (on each iteration, save memory)
+
+//    val filePath = "src/main/resources/T10I4D100K.dat"
+//    val supportThreshold = 3
+    val filePath = args(0)
+    val supportThreshold = args(1).toInt
 
     val textFile = scala.io.Source.fromFile(filePath).getLines()
 
@@ -34,6 +33,6 @@ object FrequentItemSet {
 
     val frequentItemSet = itemsFrequency.filter{ case (a, b) => b >= supportThreshold }
 
-    Apriori.transform(baskets.toMap, frequentItemSet.toMap, 3)
+    Apriori.transform(baskets.toMap, frequentItemSet.toMap, supportThreshold)
   }
 }

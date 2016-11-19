@@ -6,6 +6,8 @@ object Apriori {
 
     val reverseBasketTable = collection.mutable.Map[Int, collection.mutable.Set[Int]]()
 
+    println("Starting with %d baskets, %d items.".format(baskets.size, items.size))
+
     println("Building reverse basket look up table")
 
     baskets.foreach {
@@ -21,37 +23,67 @@ object Apriori {
     val frequencyMap = collection.mutable.Map[Int, Map[Set[Int], Int]]()
 
     val itemSet = items.filter(x => x._2 > supportThreshold).map(x => (Set(x._1), x._2))
+
+    println("First filter leaves %d items that meet support threshold %d".format(itemSet.size, supportThreshold))
+    var nSizedItemSet = itemSet
+
     frequencyMap(1) = itemSet
 
-    val currentItemSet = itemSet
+    for (i <- 1 to 2){
+      val candidateItemSets = buildItemSets(baskets, nSizedItemSet.keys, items)
+      val nPlusOneSizedItemSet = countItemSets(candidateItemSets, reverseBasketTable, supportThreshold)
+      frequencyMap(i) = nPlusOneSizedItemSet
+      nSizedItemSet = nPlusOneSizedItemSet
 
-    val xyz = buildItemSets(itemSet, currentItemSet)
+      val cnn = nPlusOneSizedItemSet.size
 
-    println("Counting built sets")
-    val tty = countItemSets(xyz, reverseBasketTable, supportThreshold)
-    tty.take(10).foreach(println)
+      println(s"Iteration $i found [$cnn] new frequent sets")
+      nPlusOneSizedItemSet.take(5).foreach(x => println(s"\t$x"))
+    }
   }
 
-  def buildItemSets(singleItemSet: Map[Set[Int], Int], itemSet: Map[Set[Int], Int]): List[Set[Int]] = {
+  def buildItemSets(baskets: Map[Int, Set[Int]], itemSet: Iterable[Set[Int]], frequentItems: Map[Int, Int]): List[Set[Int]] = {
 
-    println(singleItemSet.keys)
-    println(itemSet.keys)
-    val combinations = for {x <- singleItemSet.keys
-                            y <- itemSet.keys
-                            if x != y
-                            if x.intersect(y).isEmpty}
-      yield x.union(y)
+    val combinations = for { x <- itemSet
+      y <- baskets.map{ case (_, b) => b}
+      if x forall (y contains)
 
-    combinations.toList.distinct
+    } yield (y -- x).filter(i => frequentItems.contains(i)).map(i => { x.union(Set(i))})
+
+//    itemSet.flatMap(items => {
+//      baskets.flatMap((_, basketItems) => {
+//        basketItems.map(i => {
+//          (items, i) if (items.contains(i) == false)
+//        }) if (basketItems forall(items contains))
+//
+//      })
+//    })
+//    val combinations = for(x <- itemSet; y <- baskets){
+//      if (x forall (y._2 contains)){
+//
+//      }
+//    }
+
+
+
+//    val combinations = for {x <- singleItemSet
+//                            y <- itemSet
+//                            if x != y
+//                            if x.intersect(y).isEmpty}
+//      yield x.union(y)
+//
+//    combinations.toList.distinct
+    combinations.flatten.toList.distinct
   }
 
-  def countItemSets(itemSet: List[Set[Int]], reverseBasketTable: collection.mutable.Map[Int, collection.mutable.Set[Int]], supportThreshold: Int): Map[Set[Int], Int] = {
-    itemSet.map(items => {
-        val lookUpBasketsIndices = items.map(i => reverseBasketTable(i)).toList
-        var basketsWithItemSet = lookUpBasketsIndices(0)
-        for(i <- 1 until lookUpBasketsIndices.size){
-          basketsWithItemSet = basketsWithItemSet.intersect(lookUpBasketsIndices(i))
-        }
+  def findItemSetBaskets(itemSet: Set[Int], reverseBasketTable: collection.mutable.Map[Int, collection.mutable.Set[Int]]): Set[Int] ={
+    val baskets = itemSet.map(i => reverseBasketTable(i)).reduce((a, b) => a.intersect(b))
+    baskets.toSet
+  }
+
+  def countItemSets(itemSets: List[Set[Int]], reverseBasketTable: collection.mutable.Map[Int, collection.mutable.Set[Int]], supportThreshold: Int): Map[Set[Int], Int] = {
+    itemSets.map(items => {
+        val basketsWithItemSet = findItemSetBaskets(items, reverseBasketTable)
         val count = basketsWithItemSet.size
       (items, count)
       }).filter { case (_, c) => c >= supportThreshold }
