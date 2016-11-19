@@ -1,47 +1,60 @@
 package org.mng
 
-import org.apache.spark.rdd.RDD
-
 object Apriori {
 
-  //TODO: can a dataframe do better?
+  def transform(baskets: Map[Int, Set[Int]], items: Map[Int, Int], supportThreshold: Int, limit: Int = 10): Unit = {
 
-  def transform(baskets: RDD[Set[Int]], items: RDD[(Int, Int)], threshold: Int, limit: Int = 10): Unit ={
+    val reverseBasketTable = collection.mutable.Map[Int, collection.mutable.Set[Int]]()
 
-    val itemSet = items.map(x => (Set(x._1), x._2))
+    println("Building reverse basket look up table")
+
+    baskets.foreach {
+      case (index, items) => {
+        items.foreach(itemId => {
+          val set = reverseBasketTable.getOrElse(itemId, collection.mutable.Set[Int]())
+          set.add(index)
+          reverseBasketTable(itemId) = set
+        })
+      }
+    }
+
+    val frequencyMap = collection.mutable.Map[Int, Map[Set[Int], Int]]()
+
+    val itemSet = items.filter(x => x._2 > supportThreshold).map(x => (Set(x._1), x._2))
+    frequencyMap(1) = itemSet
 
     val currentItemSet = itemSet
 
-    val xyz = buildItemSets(itemSet, currentItemSet, threshold)
-    println(xyz.count)
-//    xyz.take(10).foreach(println)
+    val xyz = buildItemSets(itemSet, currentItemSet)
 
-    val tty = countItemSets(xyz, baskets, threshold)
-
+    println("Counting built sets")
+    val tty = countItemSets(xyz, reverseBasketTable, supportThreshold)
     tty.take(10).foreach(println)
-//    for(i <- 1 to limit){
-//      currentItemSet = buildItemSets(itemSet, currentItemSet, threshold)
-//      println(currentItemSet.count)
-//
-//    }
   }
 
-  def buildItemSets(singleItemSet: RDD[(Set[Int], Int)], itemSet: RDD[(Set[Int], Int)], threshold: Int): RDD[Set[Int]] ={
-    val combinations = singleItemSet.map(x => x._1)
-      .cartesian(itemSet.map(x => x._1))
-      .filter{ case (a, b) => a != b }
-      .map{ case (a, b) => a.union(b) }
-      .distinct
+  def buildItemSets(singleItemSet: Map[Set[Int], Int], itemSet: Map[Set[Int], Int]): List[Set[Int]] = {
 
-    combinations
+    println(singleItemSet.keys)
+    println(itemSet.keys)
+    val combinations = for {x <- singleItemSet.keys
+                            y <- itemSet.keys
+                            if x != y
+                            if x.intersect(y).isEmpty}
+      yield x.union(y)
+
+    combinations.toList.distinct
   }
 
-  def countItemSets(itemSet: RDD[Set[Int]], baskets: RDD[Set[Int]], threshold: Int): RDD[(Set[Int], Int)] ={
-    itemSet
-      .map{ items => {
-      val count = baskets.map(basketItems => if (basketItems.intersect(items).nonEmpty) 1 else 0).reduce(_+_)
-        (items, count)
-    }}
-      .filter{ case (_, count) => count >= threshold }
+  def countItemSets(itemSet: List[Set[Int]], reverseBasketTable: collection.mutable.Map[Int, collection.mutable.Set[Int]], supportThreshold: Int): Map[Set[Int], Int] = {
+    itemSet.map(items => {
+        val lookUpBasketsIndices = items.map(i => reverseBasketTable(i)).toList
+        var basketsWithItemSet = lookUpBasketsIndices(0)
+        for(i <- 1 until lookUpBasketsIndices.size){
+          basketsWithItemSet = basketsWithItemSet.intersect(lookUpBasketsIndices(i))
+        }
+        val count = basketsWithItemSet.size
+      (items, count)
+      }).filter { case (_, c) => c >= supportThreshold }
+      .toMap
   }
 }

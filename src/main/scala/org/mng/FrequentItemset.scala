@@ -1,9 +1,7 @@
 package org.mng
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Dataset, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.{SparkConf, SparkContext}
 
 
 case class ItemSet(items: Set[Int], size: Int, support: Int)
@@ -12,33 +10,30 @@ object FrequentItemSet {
 
   def main(args: Array[String]): Unit = {
 
-    val filePath = "/Users/guilherme/code/kth/id2222/frequent-itemset/src/main/resources/T10I4D100K.dat"
-    val threshold = 3
-//    val filePath = args(0)
-//    val threshold = args(1)
+    val filePath = "src/main/resources/T10I4D100K.dat" //"src/main/resources/in-1000.txt"
+    val supportThreshold = 3
+    //    val filePath = args(0)
+    //    val threshold = args(1)
 
-    val cores = Runtime.getRuntime.availableProcessors
+    val textFile = scala.io.Source.fromFile(filePath).getLines()
 
-    val spark = SparkSession
-      .builder()
-      .master(s"local[$cores]")
-      .appName("Frequent Itemset")
-      .getOrCreate()
+    val baskets = textFile.map(x => x.split(" ").map(_.toInt))
+      .zipWithIndex
+      .map{case (x, index) => index -> Set(x:_*)}
+      .toList
 
-    import spark.implicits._
+    val items = baskets.flatMap{ case (_, items) => items.map(e => (e, 1))}
 
-    val textFile = spark.read.textFile(filePath)
+    val itemsFrequency = collection.mutable.Map[Int, Int]()
 
-    val baskets = textFile.rdd.map(x => x.split(" ").map(_.toInt)).map(x => Set(x:_*))
+    items.foreach {
+      item => {
+        itemsFrequency(item._1) = item._2 + itemsFrequency.getOrElse(item._1, 0)
+      }
+    }
 
-    baskets.persist(StorageLevel.MEMORY_AND_DISK)
+    val frequentItemSet = itemsFrequency.filter{ case (a, b) => b >= supportThreshold }
 
-    val items = baskets.flatMap(_.map(e => (e, 1)))
-      .reduceByKey((a, b) => a + b)
-      .filter(x => x._2 >= threshold)
-
-//    println(items.count)
-
-    Apriori.transform(baskets, items, 3)
+    Apriori.transform(baskets.toMap, frequentItemSet.toMap, 3)
   }
 }
