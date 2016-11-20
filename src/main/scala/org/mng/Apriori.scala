@@ -8,7 +8,7 @@ object Apriori {
 
     val reverseBasketTable = mutable.Map[Int, mutable.Set[Int]]()
 
-    println("Starting with %d baskets, %d items.".format(baskets.size, items.size))
+    println(s"Starting with ${baskets.size} baskets, ${items.size} items.")
 
     println("Building reverse basket look up table")
 
@@ -31,7 +31,7 @@ object Apriori {
       }
     )
 
-    println("Frequent item sets of size 1: ", frequentItemSets.size)
+    println(s"Frequent item sets of size 1: ${frequentItemSets.size}")
 
     var nSizedItemSet = mutable.Map[Set[Int], Int]() ++ frequentItemSets
 
