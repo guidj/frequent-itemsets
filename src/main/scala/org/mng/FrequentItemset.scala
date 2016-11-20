@@ -8,21 +8,22 @@ object FrequentItemSet {
   def usage(): Unit ={
     val message =
       """
-        |FrequentItemSet [filePath] [supportThreshold] [maxSetSize]
+        |FrequentItemSet [filePath] [supportThreshold] [confidenceThreshold] [maxSetSize]
       """.stripMargin
     println(message)
   }
 
   def main(args: Array[String]): Unit = {
 
-    if (args.length < 3){
+    if (args.length < 4){
       usage()
       System.exit(1)
     }
 
     val filePath = args(0)
     val supportThreshold = args(1).toInt
-    val maxSetSize = args(2).toInt
+    val confidenceThreshold = args(2).toDouble
+    val maxSetSize = args(3).toInt
 
     val textFile = scala.io.Source.fromFile(filePath).getLines()
 
@@ -37,6 +38,10 @@ object FrequentItemSet {
       .map{ case (key, values) => (key, values.map(v => v._2).sum) }
       .filter{ case(key, count) => count >= supportThreshold }
 
-    Apriori.transform(baskets.toMap, frequentItemSet, supportThreshold, maxSetSize)
+    val associationRules = Apriori.transform(baskets.toMap, frequentItemSet, supportThreshold, confidenceThreshold, maxSetSize)
+
+    for(rule <- associationRules){
+      println(s"${rule.rule._1} => ${rule.rule._2} \t[c: ${rule.confidence}, s: ${rule.support}]")
+    }
   }
 }

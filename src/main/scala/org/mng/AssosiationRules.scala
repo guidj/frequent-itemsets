@@ -1,19 +1,12 @@
 package org.mng
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
-import org.apache.spark.storage.StorageLevel
-import org.dmg.pmml.Itemset
-
 import scala.collection.mutable
 
-case class AssociationRule(rule: (Set[Int],Set[Int]), confidence: Double, support: Int)
+case class AssociationRule(rule: (Set[Int], Set[Int]), confidence: Double, support: Int)
 
-class AssociationRules {
+object AssociationRules {
 
-  val spark = SparkSession.builder().master("local").getOrCreate()
-
-  def getAssociationRules(frequentItems: Map[Set[Int], Int], confidenceThreshold: Double, supportThreshold: Int): mutable.MutableList[AssociationRule] = {
+  def getAssociationRules(frequentItems: collection.mutable.Map[Set[Int], Int], confidenceThreshold: Double, supportThreshold: Int): mutable.MutableList[AssociationRule] = {
     var associationRules = mutable.MutableList[AssociationRule]()
 
     for ((itemSet, support) <- frequentItems) {
@@ -23,7 +16,7 @@ class AssociationRules {
       for ((set1, set2) <- pairs) {
         //TODO: Union can be repleced by just looking up the itemSet in the Map. But just to make sure all pairs are right. I'm keeping it for now.
         val support = frequentItems(set1.union(set2))
-        val confidence = support / frequentItems(set1)
+        val confidence = support / frequentItems(set1).toFloat
         if(support >= supportThreshold && confidence >= confidenceThreshold){
           associationRules += AssociationRule((set1,set2), confidence, support)
         }
