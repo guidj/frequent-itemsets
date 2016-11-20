@@ -41,7 +41,6 @@ object FrequentItemSet {
     val associationRules = Apriori.transform(baskets.toMap, frequentItemSet, supportThreshold, confidenceThreshold, maxSetSize)
 
     for(rule <- associationRules){
-//      println(f"${rule.confidence}%-10s")
       println(f"${rule.rule._1}%-25s => ${rule.rule._2}%-25s\t[c: ${rule.confidence}, s: ${rule.support}]")
     }
   }
