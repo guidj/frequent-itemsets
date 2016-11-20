@@ -37,7 +37,7 @@ object Apriori {
     var nSizedItemSet = mutable.Map[Set[Int], Int]() ++ frequentItemSets
     var iteration = 1
 
-    while(iteration <= maxSetSize){
+    while (iteration <= maxSetSize) {
       val candidateItemSets = buildItemSets(nSizedItemSet.keys, baskets, reverseBasketHT, frequentItems)
       val nPlusOneSizedItemSet = filterItemSets(candidateItemSets, frequentItemSets, reverseBasketHT, supportThreshold)
       nSizedItemSet = nPlusOneSizedItemSet
@@ -50,12 +50,12 @@ object Apriori {
     }
 
     val associationRules = AssociationRules.getAssociationRules(frequentItemSets, confidenceThreshold, supportThreshold)
-    
+
     associationRules
   }
 
 
-  def findItemSetBaskets(itemSet: Set[Int], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]]): Set[Int] ={
+  def findItemSetBaskets(itemSet: Set[Int], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]]): Set[Int] = {
     val baskets = itemSet.map(i => reverseBasketHT(i)).reduce((a, b) => a.intersect(b))
     baskets.toSet
   }
@@ -74,12 +74,13 @@ object Apriori {
     val itemCount = mutable.Map[Set[Int], Int]()
 
     candidateItemSets.foreach(items => {
-        val basketsWithItemSet = findItemSetBaskets(items, reverseBasketHT)
-        val count = basketsWithItemSet.size
-      if (count >= supportThreshold)
+      val basketsWithItemSet = findItemSetBaskets(items, reverseBasketHT)
+      val count = basketsWithItemSet.size
+      if (count >= supportThreshold) {
         itemCount(items) = count
         frequentItemSets(items) = count
-      })
+      }
+    })
 
     itemCount
   }
