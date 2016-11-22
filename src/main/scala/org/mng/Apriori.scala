@@ -1,6 +1,7 @@
 package org.mng
 
 import collection.mutable
+import scala.collection.parallel.ParSet
 
 object Apriori {
 
@@ -10,8 +11,6 @@ object Apriori {
 
     println(s"Starting with ${baskets.size} baskets, ${frequentItems.size} items.")
 
-    println("Building reverse basket look up table")
-
     val frequentItemSets = mutable.Map[Set[Int], Int]()
 
     frequentItems.foreach(
@@ -19,6 +18,8 @@ object Apriori {
         frequentItemSets(Set(x._1)) = x._2
       }
     )
+
+    println("Building reverse basket look up table")
 
     baskets.foreach {
       case (index, items) => {
@@ -60,20 +61,20 @@ object Apriori {
     baskets.toSet
   }
 
-  def buildItemSets(itemSets: Iterable[Set[Int]], baskets: Map[Int, Set[Int]], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]], frequentItems: Map[Int, Int]): Set[Set[Int]] = {
+  def buildItemSets(itemSets: Iterable[Set[Int]], baskets: Map[Int, Set[Int]], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]], frequentItems: Map[Int, Int]): ParSet[Set[Int]] = {
 
-    itemSets.flatMap(itemSet => {
+    itemSets.par.flatMap(itemSet => {
       findItemSetBaskets(itemSet, reverseBasketHT)
         .map(basketId => baskets(basketId))
         .flatMap(basket => (basket -- itemSet).filter(i => frequentItems.contains(i)).map(i => itemSet.union(Set(i))))
     }).toSet
   }
 
-  def filterItemSets(candidateItemSets: Set[Set[Int]], frequentItemSets: mutable.Map[Set[Int], Int], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]], supportThreshold: Int): mutable.Map[Set[Int], Int] = {
+  def filterItemSets(candidateItemSets: ParSet[Set[Int]], frequentItemSets: mutable.Map[Set[Int], Int], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]], supportThreshold: Int): mutable.Map[Set[Int], Int] = {
 
     val itemCount = mutable.Map[Set[Int], Int]()
 
-    candidateItemSets.foreach(items => {
+    candidateItemSets.par.foreach(items => {
       val basketsWithItemSet = findItemSetBaskets(items, reverseBasketHT)
       val count = basketsWithItemSet.size
       if (count >= supportThreshold) {
