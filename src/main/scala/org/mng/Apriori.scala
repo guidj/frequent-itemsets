@@ -39,7 +39,7 @@ object Apriori {
     var iteration = 1
 
     while (iteration <= maxSetSize) {
-      val candidateItemSets = buildItemSets(nSizedItemSet.keys, baskets, reverseBasketHT, frequentItems)
+      val candidateItemSets = buildItemSets(nSizedItemSet.keys.toList, frequentItemSets, baskets, reverseBasketHT, frequentItems)
       val nPlusOneSizedItemSet = filterItemSets(candidateItemSets, frequentItemSets, reverseBasketHT, supportThreshold)
       nSizedItemSet = nPlusOneSizedItemSet
 
@@ -55,20 +55,42 @@ object Apriori {
     associationRules
   }
 
-
   def findItemSetBaskets(itemSet: Set[Int], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]]): Set[Int] = {
     val baskets = itemSet.map(i => reverseBasketHT(i)).reduce((a, b) => a.intersect(b))
     baskets.toSet
   }
 
-  def buildItemSets(itemSets: Iterable[Set[Int]], baskets: Map[Int, Set[Int]], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]], frequentItems: Map[Int, Int]): ParSet[Set[Int]] = {
+  //TODO: do we always need to check frequency?
+  //Should be go from bucket to pairs, or pairs to buckets
 
-    itemSets.par.flatMap(itemSet => {
-      findItemSetBaskets(itemSet, reverseBasketHT)
-        .map(basketId => baskets(basketId))
-        .flatMap(basket => (basket -- itemSet).filter(i => frequentItems.contains(i)).map(i => itemSet.union(Set(i))))
-    }).toSet
+  def buildItemSets(itemSets: List[Set[Int]], frequentItemSets: mutable.Map[Set[Int], Int], baskets: Map[Int, Set[Int]], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]], frequentItems: Map[Int, Int]): ParSet[Set[Int]] = {
+
+    //    create pairs of size n, where all subsets of size n-1 are frequent
+
+    val newSets = itemSets.par.zipWithIndex.flatMap{ case (itemSet, i) => {
+      val candidates = itemSets.zipWithIndex.filter{ case(_, j) => j > i}
+        .flatMap{ case(secondItemSet, _) => itemSet.union(secondItemSet).subsets(itemSet.size + 1)}
+          .filter(candidateSet => {
+            val subsets = candidateSet.subsets(itemSet.size)
+            var c = 0
+            var total = 0
+            for(subset <- subsets){
+              if (frequentItemSets.contains(subset)) {
+                c += 1
+              }
+
+              total += 1
+            }
+            c == total
+          })
+      candidates
+    }}.toSet
+
+    newSets
   }
+
+  //TODO: do we always need to check frequency?
+  //Should be go from bucket to pairs, or pairs to buckets
 
   def filterItemSets(candidateItemSets: ParSet[Set[Int]], frequentItemSets: mutable.Map[Set[Int], Int], reverseBasketHT: mutable.Map[Int, mutable.Set[Int]], supportThreshold: Int): mutable.Map[Set[Int], Int] = {
 
