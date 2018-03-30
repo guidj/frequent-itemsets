@@ -1,6 +1,6 @@
 # Finding Frequent Itemsets
 
-##Build and Run
+## Build and Run
 
 The application takes as input 4 parameters:
 
@@ -23,7 +23,7 @@ To run it, type:
 
 The last 4 are parameters, path, support, confidence, and maximum set size
 
-##Apriori
+## Apriori
 
 We compute the frequent item sets, using the Apriori algorithm.
 For the first step, we determine the frequent items in the set, i.e. those that meet the support size, *s*. With the items, one should build the candidate pairs, and determine the frequent ones again. The process is similar moving forward at each stage.
