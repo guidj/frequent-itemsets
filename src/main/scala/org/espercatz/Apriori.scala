@@ -1,7 +1,9 @@
-package org.mng
+package org.espercatz
 
 import collection.mutable
 import scala.collection.parallel.ParSet
+
+import org.espercatz.domain.AssociationRule
 
 object Apriori {
 

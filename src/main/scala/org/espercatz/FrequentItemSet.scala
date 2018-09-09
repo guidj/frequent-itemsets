@@ -1,9 +1,6 @@
-package org.mng
+package org.espercatz
 
 import org.rogach.scallop.ScallopConf
-
-
-case class ItemSet(items: Set[Int], size: Int, support: Int)
 
 object FrequentItemSet {
 
@@ -68,10 +65,8 @@ object FrequentItemSet {
     )
 
     for (rule <- associationRules) {
-      println(f"${rule.rule._1}%-25s => ${rule.rule._2}%-25s\t[c: ${rule.confidence}, s: ${
-        rule
-          .support
-      }]")
+      println(f"${rule.antecedent}%-25s => ${rule.consequent}%-25s" +
+        s"\t[c: ${rule.confidence}, s: ${rule.support}]")
     }
   }
 }
