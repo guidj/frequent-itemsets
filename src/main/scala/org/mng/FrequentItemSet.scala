@@ -1,11 +1,40 @@
 package org.mng
 
+import org.rogach.scallop.ScallopConf
+
 
 case class ItemSet(items: Set[Int], size: Int, support: Int)
 
 object FrequentItemSet {
 
-  def usage(): Unit ={
+  case class Args(arguments: Seq[String]) extends ScallopConf(arguments) {
+    val input = opt[String](
+      "input",
+      required = true,
+      descr = "Path to file with baskets. Each line is a space separated list of items"
+    )
+    val minSupport = opt[Int](
+      "min-support",
+      required = true,
+      descr = "Min support for association rules",
+      validate = _ > 0
+    )
+    val minConfidence = opt[Double](
+      "min-confidence",
+      required = true,
+      descr = "Min confidence for association rules",
+      validate = v => v > 0.0 && v <= 1.0
+    )
+    val maxSetSize = opt[Int](
+      "max-set-size",
+      required = true,
+      descr = "Max size of candidate sets",
+      validate = _ > 1
+    )
+    verify()
+  }
+
+  def usage(): Unit = {
     val message =
       """
         |FrequentItemSet [filePath] [supportThreshold] [confidenceThreshold] [maxSetSize]
@@ -13,35 +42,36 @@ object FrequentItemSet {
     println(message)
   }
 
-  def main(args: Array[String]): Unit = {
+  def main(cmdArgs: Array[String]): Unit = {
 
-    if (args.length < 4){
-      usage()
-      System.exit(1)
-    }
+    val args = Args(cmdArgs)
 
-    val filePath = args(0)
-    val supportThreshold = args(1).toInt
-    val confidenceThreshold = args(2).toDouble
-    val maxSetSize = args(3).toInt
-
-    val textFile = scala.io.Source.fromFile(filePath).getLines()
+    val textFile = scala.io.Source.fromFile(args.input()).getLines()
 
     val baskets = textFile.map(x => x.split(" ").map(_.toInt))
       .zipWithIndex
-      .map{case (x, index) => index -> Set(x:_*)}
+      .map { case (x, index) => index -> Set(x: _*) }
       .toList
 
-    val items = baskets.flatMap{ case (_, items) => items.map(e => (e, 1))}
+    val items = baskets.flatMap { case (_, items) => items.map(e => (e, 1)) }
 
-    val frequentItemSet = items.groupBy{ case (id, c) => id }
-      .map{ case (key, values) => (key, values.map(v => v._2).sum) }
-      .filter{ case(key, count) => count >= supportThreshold }
+    val frequentItemSet = items.groupBy { case (id, c) => id }
+      .map { case (key, values) => (key, values.map(v => v._2).sum) }
+      .filter { case (key, count) => count >= args.minSupport() }
 
-    val associationRules = Apriori.transform(baskets.toMap, frequentItemSet, supportThreshold, confidenceThreshold, maxSetSize)
+    val associationRules = Apriori.transform(
+      baskets.toMap,
+      frequentItemSet,
+      args.minSupport(),
+      args.minConfidence(),
+      args.maxSetSize()
+    )
 
-    for(rule <- associationRules){
-      println(f"${rule.rule._1}%-25s => ${rule.rule._2}%-25s\t[c: ${rule.confidence}, s: ${rule.support}]")
+    for (rule <- associationRules) {
+      println(f"${rule.rule._1}%-25s => ${rule.rule._2}%-25s\t[c: ${rule.confidence}, s: ${
+        rule
+          .support
+      }]")
     }
   }
 }

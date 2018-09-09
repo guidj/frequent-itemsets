@@ -18,10 +18,16 @@ To run the program, first build the jar:
 To run it, type:
 
 ```
-~$ java -jar target/scala-2.11/frequent-itemset-assembly-1.0.jar src/main/resources/T10I4D100K.dat 1000 .5 5
+$ java -jar target/scala-2.11/frequent-itemset-assembly-1.0.jar --input=src/main/resources/T10I4D100K.dat --min-support=1000 --min-confidence=.5 --max-set-size=3
 ```
 
 The last 4 are parameters, path, support, confidence, and maximum set size
+
+To see run options, type:
+
+```
+$ java -jar target/scala-2.11/frequent-itemset-assembly-1.0.jar --help
+```
 
 ## Apriori
 
