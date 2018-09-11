@@ -1,8 +1,14 @@
-package org.espercatz
+package org.espercatz.task
 
+import org.espercatz.algorithm.Apriori
 import org.rogach.scallop.ScallopConf
 
-object FrequentItemSet {
+/**
+  * Created by guilherme on 9/10/18.
+  * Default (Template) Project
+  *
+  */
+object FrequentItemSetTask {
 
   case class Args(arguments: Seq[String]) extends ScallopConf(arguments) {
     val input = opt[String](
@@ -34,7 +40,7 @@ object FrequentItemSet {
   def usage(): Unit = {
     val message =
       """
-        |FrequentItemSet [filePath] [supportThreshold] [confidenceThreshold] [maxSetSize]
+        |FrequentItemSetTask [filePath] [supportThreshold] [confidenceThreshold] [maxSetSize]
       """.stripMargin
     println(message)
   }
@@ -48,17 +54,10 @@ object FrequentItemSet {
     val baskets = textFile.map(x => x.split(" ").map(_.toInt))
       .zipWithIndex
       .map { case (x, index) => index -> Set(x: _*) }
-      .toList
-
-    val items = baskets.flatMap { case (_, items) => items.map(e => (e, 1)) }
-
-    val frequentItemSet = items.groupBy { case (id, c) => id }
-      .map { case (key, values) => (key, values.map(v => v._2).sum) }
-      .filter { case (key, count) => count >= args.minSupport() }
+      .toMap
 
     val associationRules = Apriori.transform(
-      baskets.toMap,
-      frequentItemSet,
+      baskets,
       args.minSupport(),
       args.minConfidence(),
       args.maxSetSize()

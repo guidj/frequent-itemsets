@@ -14,6 +14,6 @@ libraryDependencies ++= Seq(
   "org.rogach" %% "scallop" % scallopVersion
 )
 
-mainClass in Compile := Some("org.espercatz.FrequentItemSet")
+mainClass in Compile := Some("org.espercatz.task.FrequentItemSetTask")
 
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = true)

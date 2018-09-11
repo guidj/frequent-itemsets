@@ -1,4 +1,4 @@
-package org.espercatz.domain
+package org.espercatz.record
 
 case class AssociationRule(
   antecedent: Set[Int],

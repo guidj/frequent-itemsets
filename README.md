@@ -4,10 +4,10 @@
 
 The application takes as input 4 parameters:
 
-  - *filePath*: input file, where each line is a basket, with space separated items
-  - *support*: minimum number of times a set should be present to be considered valid
-  - *confidence*: confidence level for association rules
-  - *maxSetSize*: maximum size of sets to compute
+  - *input*: input file, where each line is a basket, with space separated items
+  - *min-support*: minimum number of times a set should be present to be considered valid
+  - *min-confidence*: confidence level for association rules
+  - *max-set-size*: maximum size of sets to compute
 
 To run the program, first build the jar:
 
